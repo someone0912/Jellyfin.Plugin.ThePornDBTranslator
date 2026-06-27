@@ -1,0 +1,8 @@
+yaml
+name: "ThePornDBTranslator"           # 插件显示名称
+guid: "8BD0C0E5-433F-4047-B46B-E60DF1EA7C97" # 你的插件 GUID
+version: 1.0.0                            # 递增的版本号（整数）
+targetAbi: "10.11.11.0"                 # 目标 Jellyfin ABI 版本
+framework: "net9.0"                    # 你的目标框架（如 net9.0）
+artifacts:                             # 需要打包的 DLL
+  - "Jellyfin.Plugin.ThePornDBTranslator.dll"
