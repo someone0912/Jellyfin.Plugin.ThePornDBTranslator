@@ -1,0 +1,13 @@
+json
+{
+  "id": "8BD0C0E5-433F-4047-B46B-E60DF1EA7C97",
+  "name": "ThePornDBTranslator",
+  "description": "专门翻译ThePornDB刮削的元数据（独立模块）",
+  "version": "1.0.0.0",
+  "targetAbi": "10.11.11.0",
+  "repository": "https://raw.githubusercontent.com/someone0912/Jellyfin.Plugin.ThePornDBTranslator/main/manifest.json",
+  "changelog": "初始版本发布",
+  "overview": "自动翻译 ThePornDB 元数据（标题、简介、标语），支持 DeepSeek/OpenAI 等 LLM API",
+  "owner": "someone0912",
+  "category": "Metadata",
+  }
