@@ -43,10 +43,10 @@ markdown
 ## 📸 截图
 
 ### 配置页面
-![配置页面](screenshots/config.png)
+![配置页面](screenshots/配置页面.jpeg)
 
 ### 翻译效果
-![翻译效果](screenshots/result.png)
+![翻译效果](screenshots/翻译效果.jpeg)
 
 ## 🚀 安装
 
@@ -65,28 +65,20 @@ text
 
 1. 在 Jellyfin 仪表盘 → 插件 → ThePornDBTranslator 进入配置页面
 2. 填写以下配置：
-   - **API 地址**：LLM API 的完整地址，如 `https://api.deepseek.com/chat/completions`
-   - **API 密钥**：你的 API Key
-   - **模型名称**：如 `deepseek-v4-pro`、`gpt-4o` 等
-   - **翻译提示词**：自定义翻译指令（使用 `{{text}}` 代表待翻译内容）
-   - **翻译字段**：选择要翻译的字段（标题、简介、标语）
+   - API 地址：LLM API 的完整地址，如 https://api.deepseek.com/chat/completions
+   - API 密钥：你的 API Key
+   - 模型名称：如 `deepseek-v4-pro`、`gpt-4o` 等
+   - 翻译提示词：自定义翻译指令（使用 `{{text}}` 代表待翻译内容）
+   - 翻译字段：选择要翻译的字段（标题、简介、标语）
 3. 启用翻译并保存
 
 ## 🔧 支持的 LLM API
 
-- **DeepSeek**：`https://api.deepseek.com/chat/completions`
-- **OpenAI**：`https://api.openai.com/v1/chat/completions`
-- **其他兼容 API**：任何兼容 OpenAI 格式的 API
+- 任何兼容 OpenAI 格式的 API
+- 
+比如 DeepSeek：https://api.deepseek.com/chat/completions
+OpenAI：https://api.openai.com/v1/chat/completions
 
-## 🛠️ 从源码构建
-
-```bash
-# 克隆仓库
-git clone https://github.com/你的用户名/Jellyfin.Plugin.ThePornDBTranslator.git
-cd Jellyfin.Plugin.ThePornDBTranslator
-
-# 还原依赖
-dotnet restore
 
 # 编译
 dotnet build --configuration Release
@@ -121,4 +113,4 @@ Jellyfin - 优秀的开源媒体系统
 
 ThePornDB - 提供元数据支持
 
-DeepSeek - 提供强大的翻译能力
+DeepSeek - 都是D老师写的
