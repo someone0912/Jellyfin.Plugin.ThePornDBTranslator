@@ -1,0 +1,27 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<!-- 核心：目标框架必须为 net10.0 -->
+		<TargetFramework>net9.0</TargetFramework>
+		<RootNamespace>Jellyfin.Plugin.ThePornDBTranslator</RootNamespace>
+		<AssemblyVersion>1.0.0.0</AssemblyVersion>
+		<FileVersion>1.0.0.0</FileVersion>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>disable</ImplicitUsings>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<!-- Jellyfin 10.11.11 核心依赖 -->
+		<PackageReference Include="Jellyfin.Common" Version="10.11.0" />
+		<PackageReference Include="Jellyfin.Controller" Version="10.11.0" />
+		<PackageReference Include="Jellyfin.Model" Version="10.11.0" />
+
+		<!-- .NET 10 基础依赖 (版本必须为 10.0.0) -->
+		<!--	<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.11" />
+		<PackageReference Include="System.Text.Json" Version="9.0.11" /> -->
+
+		<EmbeddedResource Include="Configuration\config.html">
+			<LogicalName>Jellyfin.Plugin.ThePornDBTranslator.Configuration.config.html</LogicalName>
+		</EmbeddedResource>
+	</ItemGroup>
+</Project>
+
