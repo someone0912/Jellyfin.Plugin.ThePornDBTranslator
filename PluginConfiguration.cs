@@ -18,6 +18,7 @@ namespace Jellyfin.Plugin.ThePornDBTranslator
         public bool TranslateTitle { get; set; } = true;
         public bool TranslateOverview { get; set; } = true;
         public bool TranslateTagline { get; set; } = true;
+        public bool TranslateActors { get; set; } = false; // ✅ 新增
         public int TimeoutSeconds { get; set; } = 30;
     }
 }

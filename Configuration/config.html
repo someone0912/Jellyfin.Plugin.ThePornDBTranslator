@@ -25,22 +25,20 @@
                     <div class="inputContainer">
                         <label class="inputLabel inputLabelUnfocused" for="ApiUrl">API 地址</label>
                         <input id="ApiUrl" name="ApiUrl" type="text" is="emby-input" />
-                        <div class="fieldDescription">支持 OpenAI 格式的 API，如：https://api.openai.com/v1/chat/completions</div>
+                        <div class="fieldDescription">支持 OpenAI 格式的 API，如：https://api.deepseek.com/chat/completions</div>
                     </div>
-
 
                     <div class="inputContainer">
                         <label class="inputLabel inputLabelUnfocused" for="ApiKey">API 密钥</label>
                         <input id="ApiKey" name="ApiKey" type="password" is="emby-input" />
                         <div class="fieldDescription">如果 API 不需要密钥可以留空</div>
                     </div>
+
                     <div class="inputContainer">
                         <label class="inputLabel inputLabelUnfocused" for="ModelName">模型名称</label>
                         <input id="ModelName" name="ModelName" type="text" is="emby-input" placeholder="gpt-3.5-turbo" />
                         <div class="fieldDescription">常用模型：gpt-3.5-turbo, gpt-4, gpt-4o, deepseek-chat, claude-3.5-sonnet 等</div>
                     </div>
-
-
 
                     <!-- 翻译设置 -->
                     <h2>📝 翻译设置</h2>
@@ -66,6 +64,15 @@
                         </label>
                     </div>
 
+                    <!-- ✅ 新增：翻译演员名称 -->
+                    <div class="checkboxContainer checkboxContainer-withDescription">
+                        <label class="emby-checkbox-label">
+                            <input id="TranslateActors" name="TranslateActors" type="checkbox" is="emby-checkbox" />
+                            <span>翻译演员名称</span>
+                        </label>
+                        <div class="fieldDescription checkboxFieldDescription">启用后，演员姓名将被翻译成中文。关闭则保留英文原名。</div>
+                    </div>
+
                     <div class="inputContainer">
                         <label class="inputLabel inputLabelUnfocused" for="PromptTemplate">翻译提示词</label>
                         <textarea is="emby-textarea" id="PromptTemplate" name="PromptTemplate" class="textarea-mono emby-textarea" rows="6" style="width: 100%;"></textarea>
@@ -84,51 +91,45 @@
                 </form>
             </div>
         </div>
+
         <script type="text/javascript">
-            // ============================================================
-            // 关键：使用与 Plugin.cs 中完全一致的 GUID
-            // ============================================================
             var ThePornDBTranslatorConfig = {
-                pluginUniqueId: '8BD0C0E5-433F-4047-B46B-E60DF1EA7C97' // 请替换为你的实际 GUID
+                pluginUniqueId: '8BD0C0E5-433F-4047-B46B-E60DF1EA7C97'
             };
 
-            // 页面加载时加载配置
             $('#ThePornDBTranslatorConfigurationPage').on('pageshow', function () {
-                var page = this;  // ✅ 定义 page 变量指向当前页面
+                var page = this;
                 Dashboard.showLoadingMsg();
                 ApiClient.getPluginConfiguration(ThePornDBTranslatorConfig.pluginUniqueId).then(function (config) {
-                    // 加载配置到表单
                     $('#EnableTranslation', page).prop('checked', config.EnableTranslation || false);
                     $('#ApiUrl', page).val(config.ApiUrl || '');
-                 
                     $('#ApiKey', page).val(config.ApiKey || '');
                     $('#ModelName', page).val(config.ModelName || 'gpt-3.5-turbo');
                     $('#TranslateTitle', page).prop('checked', config.TranslateTitle !== false);
                     $('#TranslateOverview', page).prop('checked', config.TranslateOverview !== false);
                     $('#TranslateTagline', page).prop('checked', config.TranslateTagline !== false);
+                    $('#TranslateActors', page).prop('checked', config.TranslateActors || false); // ✅ 新增
                     $('#PromptTemplate', page).val(config.PromptTemplate || '');
                     $('#TimeoutSeconds', page).val(config.TimeoutSeconds || 30);
                     Dashboard.hideLoadingMsg();
                 });
             });
 
-            // 保存配置
             $('#ThePornDBTranslatorConfigForm').on('submit', function () {
-                var form = this;  // ✅ 定义 form 变量指向当前表单
+                var form = this;
                 Dashboard.showLoadingMsg();
                 ApiClient.getPluginConfiguration(ThePornDBTranslatorConfig.pluginUniqueId).then(function (config) {
-                    // 从表单读取配置
                     config.EnableTranslation = $('#EnableTranslation', form).prop('checked');
                     config.ApiUrl = $('#ApiUrl', form).val();
-                    config.ModelName = $('#ModelName', form).val();  // ✅ 在正确位置读取
                     config.ApiKey = $('#ApiKey', form).val();
+                    config.ModelName = $('#ModelName', form).val();
                     config.TranslateTitle = $('#TranslateTitle', form).prop('checked');
                     config.TranslateOverview = $('#TranslateOverview', form).prop('checked');
                     config.TranslateTagline = $('#TranslateTagline', form).prop('checked');
+                    config.TranslateActors = $('#TranslateActors', form).prop('checked'); // ✅ 新增
                     config.PromptTemplate = $('#PromptTemplate', form).val();
                     config.TimeoutSeconds = parseInt($('#TimeoutSeconds', form).val()) || 30;
 
-                    // 更新配置
                     ApiClient.updatePluginConfiguration(ThePornDBTranslatorConfig.pluginUniqueId, config).then(function (result) {
                         Dashboard.processPluginConfigurationUpdateResult(result);
                     });

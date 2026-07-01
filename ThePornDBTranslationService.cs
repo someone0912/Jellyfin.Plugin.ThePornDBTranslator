@@ -1,12 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
+﻿using Jellyfin.Data.Enums;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Library;
 using Microsoft.Extensions.Logging;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Jellyfin.Plugin.ThePornDBTranslator
 {
@@ -17,8 +18,6 @@ namespace Jellyfin.Plugin.ThePornDBTranslator
         private readonly PluginConfiguration _config;
         private readonly ILibraryManager _libraryManager;
         private bool _disposed = false;
-
-        // 标签常量
         private const string TranslatedTag = "Translated";
 
         public ThePornDBTranslationService(
@@ -39,7 +38,6 @@ namespace Jellyfin.Plugin.ThePornDBTranslator
                         _config.ApiUrl,
                         _config.ApiKey,
                         _config.ModelName,
-                        _config.PromptTemplate,
                         logger,
                         _config.TimeoutSeconds
                     );
@@ -88,28 +86,24 @@ namespace Jellyfin.Plugin.ThePornDBTranslator
 
         private async Task ProcessItem(BaseItem? item)
         {
-            // 1. 检查服务状态
             if (!_config.EnableTranslation || _translator == null)
             {
                 _logger.LogInformation(">>> ❌ 翻译未启用或服务未初始化，跳过");
                 return;
             }
 
-            // 2. 检查是否为电影类型
             if (item is not Movie movie)
             {
                 _logger.LogInformation(">>> ❌ 不是 Movie 类型，跳过");
                 return;
             }
 
-            // 3. 检查是否已翻译（使用 Translated 标签）
             if (movie.Tags != null && movie.Tags.Contains(TranslatedTag))
             {
                 _logger.LogInformation(">>> ⏭️ 影片已包含 '{Tag}' 标签，跳过翻译", TranslatedTag);
                 return;
             }
 
-            // 4. 检查是否来自 ThePornDB
             bool isFromThePornDB = false;
             if (movie.ProviderIds != null)
             {
@@ -127,7 +121,29 @@ namespace Jellyfin.Plugin.ThePornDBTranslator
 
             _logger.LogInformation($">>> ✅ 开始翻译: {movie.Name}");
 
-            // ========== 重试循环：最多尝试3次，每次间隔30秒 ==========
+            // ========== 构建翻译上下文 ==========
+            var people = _libraryManager.GetPeople(movie);
+            var actorNames = people?
+                .Where(p => p.Type == PersonKind.Actor)
+                .Select(p => p.Name)
+                .Distinct()
+                .ToList() ?? new List<string>();
+
+            var context = new TranslationContext
+            {
+                Title = movie.Name ?? string.Empty,
+                Overview = movie.Overview ?? string.Empty,
+                Tagline = movie.Tagline ?? string.Empty,
+                Studio = movie.Studios != null && movie.Studios.Length > 0
+                    ? string.Join(", ", movie.Studios)
+                    : string.Empty,
+                ActorNames = actorNames
+            };
+
+            _logger.LogInformation(">>> 提取到 {ActorCount} 位演员，工作室: {Studio}",
+                context.ActorNames.Count, string.IsNullOrEmpty(context.Studio) ? "无" : context.Studio);
+
+            // ========== 重试循环 ==========
             int maxRetries = 3;
             int retryDelaySeconds = 30;
             bool translationSuccess = false;
@@ -139,21 +155,17 @@ namespace Jellyfin.Plugin.ThePornDBTranslator
                     _logger.LogInformation(">>> 🔄 翻译尝试 {Attempt}/{MaxRetries}", attempt, maxRetries);
                     bool needUpdate = false;
 
-                    // ========== 翻译标题 ==========
-                    if (_config.TranslateTitle && !string.IsNullOrEmpty(movie.Name))
+                    // 翻译标题
+                    if (_config.TranslateTitle && !string.IsNullOrEmpty(context.Title))
                     {
-                        string originalTitle = movie.Name;
-                        _logger.LogInformation(">>> 📝 翻译前标题: '{Title}'", originalTitle);
-
-                        var translated = await _translator.TranslateAsync(originalTitle);
+                        _logger.LogInformation(">>> 📝 翻译前标题: '{Title}'", context.Title);
+                        var translated = await _translator.TranslateTitleAsync(context);
                         _logger.LogInformation(">>> 📝 翻译后标题: '{Translated}'", translated);
 
                         if (string.IsNullOrEmpty(translated))
-                        {
                             throw new Exception("翻译返回空结果（标题）");
-                        }
 
-                        if (translated != originalTitle)
+                        if (translated != context.Title)
                         {
                             movie.Name = translated;
                             needUpdate = true;
@@ -165,21 +177,17 @@ namespace Jellyfin.Plugin.ThePornDBTranslator
                         }
                     }
 
-                    // ========== 翻译简介 ==========
-                    if (_config.TranslateOverview && !string.IsNullOrEmpty(movie.Overview))
+                    // 翻译简介
+                    if (_config.TranslateOverview && !string.IsNullOrEmpty(context.Overview))
                     {
-                        string originalOverview = movie.Overview;
-                        _logger.LogInformation(">>> 📝 翻译前简介: '{Overview}'", originalOverview);
-
-                        var translated = await _translator.TranslateAsync(originalOverview);
+                        _logger.LogInformation(">>> 📝 翻译前简介: '{Overview}'", context.Overview);
+                        var translated = await _translator.TranslateOverviewAsync(context);
                         _logger.LogInformation(">>> 📝 翻译后简介: '{Translated}'", translated);
 
                         if (string.IsNullOrEmpty(translated))
-                        {
                             throw new Exception("翻译返回空结果（简介）");
-                        }
 
-                        if (translated != originalOverview)
+                        if (translated != context.Overview)
                         {
                             movie.Overview = translated;
                             needUpdate = true;
@@ -191,21 +199,17 @@ namespace Jellyfin.Plugin.ThePornDBTranslator
                         }
                     }
 
-                    // ========== 翻译标语 ==========
-                    if (_config.TranslateTagline && !string.IsNullOrEmpty(movie.Tagline))
+                    // 翻译标语
+                    if (_config.TranslateTagline && !string.IsNullOrEmpty(context.Tagline))
                     {
-                        string originalTagline = movie.Tagline;
-                        _logger.LogInformation(">>> 📝 翻译前标语: '{Tagline}'", originalTagline);
-
-                        var translated = await _translator.TranslateAsync(originalTagline);
+                        _logger.LogInformation(">>> 📝 翻译前标语: '{Tagline}'", context.Tagline);
+                        var translated = await _translator.TranslateTaglineAsync(context);
                         _logger.LogInformation(">>> 📝 翻译后标语: '{Translated}'", translated);
 
                         if (string.IsNullOrEmpty(translated))
-                        {
                             throw new Exception("翻译返回空结果（标语）");
-                        }
 
-                        if (translated != originalTagline)
+                        if (translated != context.Tagline)
                         {
                             movie.Tagline = translated;
                             needUpdate = true;
@@ -217,14 +221,11 @@ namespace Jellyfin.Plugin.ThePornDBTranslator
                         }
                     }
 
-                    // ========== 如果有更新，添加标签并保存 ==========
+                    // 保存更新
                     if (needUpdate)
                     {
                         var tagsList = new List<string>();
-                        if (movie.Tags != null)
-                        {
-                            tagsList.AddRange(movie.Tags);
-                        }
+                        if (movie.Tags != null) tagsList.AddRange(movie.Tags);
 
                         if (!tagsList.Contains(TranslatedTag))
                         {
@@ -236,11 +237,10 @@ namespace Jellyfin.Plugin.ThePornDBTranslator
                         await movie.UpdateToRepositoryAsync(ItemUpdateType.MetadataEdit, CancellationToken.None);
                         _logger.LogInformation($"✅ 翻译完成并已保存: {movie.Name}");
                         translationSuccess = true;
-                        break; // 成功，退出重试循环
+                        break;
                     }
                     else
                     {
-                        // 所有字段都已翻译或无需翻译
                         _logger.LogInformation(">>> ⏭️ 没有需要更新的字段");
                         translationSuccess = true;
                         break;
@@ -250,7 +250,6 @@ namespace Jellyfin.Plugin.ThePornDBTranslator
                 {
                     _logger.LogError(ex, ">>> ❌ 翻译尝试 {Attempt}/{MaxRetries} 失败", attempt, maxRetries);
 
-                    // 如果不是最后一次尝试，等待30秒后重试
                     if (attempt < maxRetries)
                     {
                         _logger.LogInformation(">>> ⏳ 等待 {Delay} 秒后重试...", retryDelaySeconds);
